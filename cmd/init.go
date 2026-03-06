@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hevinxx/private-skill-repository/internal/config"
+	"github.com/hevinxx/skillx/internal/config"
 	"github.com/spf13/cobra"
 )
 

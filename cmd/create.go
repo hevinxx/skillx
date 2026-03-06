@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/hevinxx/private-skill-repository/internal/template"
+	"github.com/hevinxx/skillx/internal/template"
 	"github.com/spf13/cobra"
 )
 

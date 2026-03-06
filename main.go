@@ -1,6 +1,6 @@
 package main
 
-import "github.com/hevinxx/private-skill-repository/cmd"
+import "github.com/hevinxx/skillx/cmd"
 
 // Build-time variables for customization
 var (

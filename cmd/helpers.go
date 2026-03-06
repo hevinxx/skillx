@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"github.com/hevinxx/private-skill-repository/internal/config"
-	"github.com/hevinxx/private-skill-repository/internal/github"
-	"github.com/hevinxx/private-skill-repository/internal/registry"
+	"github.com/hevinxx/skillx/internal/config"
+	"github.com/hevinxx/skillx/internal/github"
+	"github.com/hevinxx/skillx/internal/registry"
 )
 
 func loadConfig() (*config.Config, error) {

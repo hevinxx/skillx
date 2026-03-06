@@ -1,4 +1,4 @@
-module github.com/hevinxx/private-skill-repository
+module github.com/hevinxx/skillx
 
 go 1.25.0
 

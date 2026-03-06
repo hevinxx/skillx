@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hevinxx/private-skill-repository/internal/installer"
-	"github.com/hevinxx/private-skill-repository/internal/skillrc"
+	"github.com/hevinxx/skillx/internal/installer"
+	"github.com/hevinxx/skillx/internal/skillrc"
 	"github.com/spf13/cobra"
 )
 

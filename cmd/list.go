@@ -5,7 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/hevinxx/private-skill-repository/internal/registry"
+	"github.com/hevinxx/skillx/internal/registry"
 	"github.com/spf13/cobra"
 )
 

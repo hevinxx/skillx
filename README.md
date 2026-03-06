@@ -9,12 +9,12 @@ Organizations maintain a private GitHub repository of skills (commands, behavior
 ### From source
 
 ```bash
-go install github.com/hevinxx/private-skill-repository@latest
+go install github.com/hevinxx/skillx@latest
 ```
 
 ### From releases
 
-Download the binary for your platform from [Releases](https://github.com/hevinxx/private-skill-repository/releases).
+Download the binary for your platform from [Releases](https://github.com/hevinxx/skillx/releases).
 
 ### Custom binary name
 

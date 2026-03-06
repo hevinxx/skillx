@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hevinxx/private-skill-repository/internal/github"
-	"github.com/hevinxx/private-skill-repository/internal/registry"
-	"github.com/hevinxx/private-skill-repository/internal/skillrc"
+	"github.com/hevinxx/skillx/internal/github"
+	"github.com/hevinxx/skillx/internal/registry"
+	"github.com/hevinxx/skillx/internal/skillrc"
 )
 
 // installPathMap maps skill types to their target directories.

@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/hevinxx/private-skill-repository/internal/config"
+	"github.com/hevinxx/skillx/internal/config"
 )
 
 // Client interacts with the GitHub API to fetch files from the skill repository.
