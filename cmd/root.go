@@ -29,6 +29,16 @@ skills with simple commands.`, buildInfo.BinaryName),
 	}
 
 	cmd.AddCommand(newVersionCmd())
+	cmd.AddCommand(newInitCmd())
+	cmd.AddCommand(newInitRepoCmd())
+	cmd.AddCommand(newListCmd())
+	cmd.AddCommand(newSearchCmd())
+	cmd.AddCommand(newInfoCmd())
+	cmd.AddCommand(newAddCmd())
+	cmd.AddCommand(newRemoveCmd())
+	cmd.AddCommand(newUpdateCmd())
+	cmd.AddCommand(newStatusCmd())
+	cmd.AddCommand(newCreateCmd())
 
 	return cmd
 }
