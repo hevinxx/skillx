@@ -1,0 +1,34 @@
+# Skill Repository
+
+Shared Claude Code skills for the team. Use the SkillX CLI to install skills into your projects.
+
+## Quick Start
+
+```bash
+# List available skills
+skillx list
+
+# Install a skill into your current project
+skillx add <skill-name>
+
+# Search for skills
+skillx search <query>
+```
+
+## Contributing
+
+1. Clone this repository
+2. Create a new skill: `skillx create my-skill --type command`
+3. Edit the generated files
+4. Open a pull request
+
+## Structure
+
+```
+commands/   Slash commands for Claude Code (/command-name)
+skills/     Behavioral instructions and domain knowledge
+agents/     Autonomous agent definitions
+```
+
+Each skill directory contains a `skill.yaml` metadata file and one or more content files.
+See `templates/skill.yaml.template` for the metadata format.

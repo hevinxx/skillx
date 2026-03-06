@@ -1,0 +1,71 @@
+name: Validate Skills
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate skill definitions
+        run: |
+          errors=0
+
+          for skill_yaml in $(find commands skills agents -name "skill.yaml" 2>/dev/null); do
+            dir=$(dirname "$skill_yaml")
+            dir_name=$(basename "$dir")
+
+            # Check required fields
+            for field in name type description author files; do
+              if ! grep -q "^${field}:" "$skill_yaml"; then
+                echo "ERROR: $skill_yaml missing required field: $field"
+                errors=$((errors + 1))
+              fi
+            done
+
+            # Check name matches directory
+            name=$(grep "^name:" "$skill_yaml" | sed 's/name: *//' | tr -d '"' | tr -d "'")
+            if [ "$name" != "$dir_name" ]; then
+              echo "ERROR: $skill_yaml name '$name' does not match directory '$dir_name'"
+              errors=$((errors + 1))
+            fi
+
+            # Check type is valid
+            type=$(grep "^type:" "$skill_yaml" | sed 's/type: *//' | tr -d '"' | tr -d "'")
+            if [ "$type" != "command" ] && [ "$type" != "skill" ] && [ "$type" != "agent" ]; then
+              echo "ERROR: $skill_yaml has invalid type: $type"
+              errors=$((errors + 1))
+            fi
+
+            # Check listed files exist
+            grep -A 100 "^files:" "$skill_yaml" | tail -n +2 | grep "^  - " | sed 's/  - //' | while read -r file; do
+              if [ ! -f "$dir/$file" ]; then
+                echo "ERROR: $skill_yaml references missing file: $dir/$file"
+                errors=$((errors + 1))
+              fi
+            done
+
+            # Check kebab-case naming
+            if ! echo "$name" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+              echo "ERROR: $skill_yaml name '$name' is not kebab-case"
+              errors=$((errors + 1))
+            fi
+          done
+
+          # Check for duplicate names
+          all_names=$(find commands skills agents -name "skill.yaml" 2>/dev/null -exec grep "^name:" {} \; | sed 's/name: *//' | tr -d '"' | tr -d "'" | sort)
+          dupes=$(echo "$all_names" | uniq -d)
+          if [ -n "$dupes" ]; then
+            echo "ERROR: Duplicate skill names found: $dupes"
+            errors=$((errors + 1))
+          fi
+
+          if [ $errors -gt 0 ]; then
+            echo "Validation failed with $errors error(s)"
+            exit 1
+          fi
+
+          echo "All skills validated successfully"

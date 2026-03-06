@@ -1,0 +1,7 @@
+name: your-skill-name
+type: command # command | skill | agent
+description: "A brief description of what this skill does"
+author: "your-email@company.com"
+files:
+  - your-skill-name.md
+tags: []
