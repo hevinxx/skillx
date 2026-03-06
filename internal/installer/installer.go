@@ -72,8 +72,21 @@ func (inst *Installer) Install(entry *registry.SkillEntry, scope string) ([]stri
 			return installed, fmt.Errorf("fetching %s: %w", file, err)
 		}
 
-		// Determine local path: <base>/<typeDir>/<skill-name>/<file>
-		localPath := filepath.Join(base, typeDir, meta.Name, file)
+		// Determine local path based on type:
+		//   command → <base>/.claude/commands/<name>.md
+		//   agent   → <base>/.claude/agents/<name>.md
+		//   skill   → <base>/.claude/skills/<name>/SKILL.md
+		var localPath string
+		switch meta.Type {
+		case "command", "agent":
+			localPath = filepath.Join(base, typeDir, meta.Name+".md")
+		default:
+			localFile := file
+			if filepath.Ext(file) == ".md" {
+				localFile = "SKILL.md"
+			}
+			localPath = filepath.Join(base, typeDir, meta.Name, localFile)
+		}
 		if err := os.MkdirAll(filepath.Dir(localPath), 0755); err != nil {
 			return installed, fmt.Errorf("creating directory for %s: %w", file, err)
 		}
@@ -98,11 +111,20 @@ func (inst *Installer) Remove(name, skillType, scope string) error {
 		return fmt.Errorf("unknown skill type: %s", skillType)
 	}
 
-	skillDir := filepath.Join(base, typeDir, name)
-	if _, err := os.Stat(skillDir); os.IsNotExist(err) {
-		return fmt.Errorf("skill directory not found: %s", skillDir)
+	switch skillType {
+	case "command", "agent":
+		filePath := filepath.Join(base, typeDir, name+".md")
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			return fmt.Errorf("skill file not found: %s", filePath)
+		}
+		return os.Remove(filePath)
+	default:
+		skillDir := filepath.Join(base, typeDir, name)
+		if _, err := os.Stat(skillDir); os.IsNotExist(err) {
+			return fmt.Errorf("skill directory not found: %s", skillDir)
+		}
+		return os.RemoveAll(skillDir)
 	}
-	return os.RemoveAll(skillDir)
 }
 
 // TrackInstall records the installation in .skillrc.
