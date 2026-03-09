@@ -14,7 +14,7 @@ func newInitCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
 		Short: "Set up CLI configuration",
-		Long:  "Interactive setup that creates the configuration file with GitHub org, repo, and authentication settings.",
+		Long:  "Interactive setup that creates the configuration file with provider, org, repo, and authentication settings.",
 		RunE:  runInit,
 	}
 }
@@ -25,8 +25,15 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Println("Setting up " + buildInfo.BinaryName + " configuration")
 	fmt.Println()
 
-	host := prompt(reader, "GitHub host", defaultVal(buildInfo.DefaultHost, "github.com"))
-	org := prompt(reader, "GitHub organization", buildInfo.DefaultOrg)
+	providerType := prompt(reader, "Provider type (github/gitlab/gitea)", "github")
+	providerType = strings.ToLower(providerType)
+	if providerType != "github" && providerType != "gitlab" && providerType != "gitea" {
+		providerType = "github"
+	}
+
+	defaultHost := defaultVal(buildInfo.DefaultHost, defaultHostFor(providerType))
+	host := prompt(reader, "Host", defaultHost)
+	org := prompt(reader, "Organization / Group", buildInfo.DefaultOrg)
 	repo := prompt(reader, "Skill repository name", defaultVal(buildInfo.DefaultRepo, "claude-skills"))
 	scope := prompt(reader, "Default install scope (project/global)", "project")
 
@@ -35,7 +42,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	cfg := &config.Config{
-		GitHub: config.GitHubConfig{
+		Provider: config.ProviderConfig{
+			Type: providerType,
 			Host: host,
 			Org:  org,
 			Repo: repo,
@@ -73,4 +81,13 @@ func defaultVal(buildTime, fallback string) string {
 		return buildTime
 	}
 	return fallback
+}
+
+func defaultHostFor(providerType string) string {
+	switch providerType {
+	case "gitlab":
+		return "gitlab.com"
+	default:
+		return "github.com"
+	}
 }

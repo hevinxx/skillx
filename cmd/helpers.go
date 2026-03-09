@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/hevinxx/skillx/internal/config"
-	"github.com/hevinxx/skillx/internal/github"
+	"github.com/hevinxx/skillx/internal/provider"
 	"github.com/hevinxx/skillx/internal/registry"
 )
 
@@ -10,16 +10,16 @@ func loadConfig() (*config.Config, error) {
 	return config.Load(buildInfo.BinaryName)
 }
 
-func newGitHubClient() (*github.Client, error) {
+func newProvider() (provider.Provider, error) {
 	cfg, err := loadConfig()
 	if err != nil {
 		return nil, err
 	}
-	return github.NewClient(cfg)
+	return provider.New(cfg.Provider.Type, cfg.Provider.Host, cfg.Provider.Org, cfg.Provider.Repo)
 }
 
 func fetchIndex() (*registry.Index, error) {
-	client, err := newGitHubClient()
+	client, err := newProvider()
 	if err != nil {
 		return nil, err
 	}

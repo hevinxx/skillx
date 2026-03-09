@@ -1,0 +1,113 @@
+stages:
+  - validate
+  - index
+
+validate-skills:
+  stage: validate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - |
+      errors=0
+
+      for skill_yaml in $(find commands skills agents -name "skill.yaml" 2>/dev/null); do
+        dir=$(dirname "$skill_yaml")
+        dir_name=$(basename "$dir")
+
+        # Check required fields
+        for field in name type description author files; do
+          if ! grep -q "^${field}:" "$skill_yaml"; then
+            echo "ERROR: $skill_yaml missing required field: $field"
+            errors=$((errors + 1))
+          fi
+        done
+
+        # Check name matches directory
+        name=$(grep "^name:" "$skill_yaml" | sed 's/name: *//' | tr -d '"' | tr -d "'")
+        if [ "$name" != "$dir_name" ]; then
+          echo "ERROR: $skill_yaml name '$name' does not match directory '$dir_name'"
+          errors=$((errors + 1))
+        fi
+
+        # Check type is valid
+        type=$(grep "^type:" "$skill_yaml" | sed 's/type: *//' | tr -d '"' | tr -d "'")
+        if [ "$type" != "command" ] && [ "$type" != "skill" ] && [ "$type" != "agent" ]; then
+          echo "ERROR: $skill_yaml has invalid type: $type"
+          errors=$((errors + 1))
+        fi
+
+        # Check listed files exist
+        grep -A 100 "^files:" "$skill_yaml" | tail -n +2 | grep "^  - " | sed 's/  - //' | while read -r file; do
+          if [ ! -f "$dir/$file" ]; then
+            echo "ERROR: $skill_yaml references missing file: $dir/$file"
+            errors=$((errors + 1))
+          fi
+        done
+
+        # Check kebab-case naming
+        if ! echo "$name" | grep -qE '^[a-z0-9]+(-[a-z0-9]+)*$'; then
+          echo "ERROR: $skill_yaml name '$name' is not kebab-case"
+          errors=$((errors + 1))
+        fi
+      done
+
+      # Check for duplicate names
+      all_names=$(find commands skills agents -name "skill.yaml" 2>/dev/null -exec grep "^name:" {} \; | sed 's/name: *//' | tr -d '"' | tr -d "'" | sort)
+      dupes=$(echo "$all_names" | uniq -d)
+      if [ -n "$dupes" ]; then
+        echo "ERROR: Duplicate skill names found: $dupes"
+        errors=$((errors + 1))
+      fi
+
+      if [ $errors -gt 0 ]; then
+        echo "Validation failed with $errors error(s)"
+        exit 1
+      fi
+
+      echo "All skills validated successfully"
+
+generate-index:
+  stage: index
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - "commands/**/skill.yaml"
+        - "skills/**/skill.yaml"
+        - "agents/**/skill.yaml"
+  script:
+    - |
+      echo "skills:" > index.yaml
+
+      for skill_yaml in $(find commands skills agents -name "skill.yaml" 2>/dev/null | sort); do
+        dir=$(dirname "$skill_yaml")
+
+        name=$(grep "^name:" "$skill_yaml" | sed 's/name: *//' | tr -d '"' | tr -d "'")
+        type=$(grep "^type:" "$skill_yaml" | sed 's/type: *//' | tr -d '"' | tr -d "'")
+        description=$(grep "^description:" "$skill_yaml" | sed 's/description: *//')
+        author=$(grep "^author:" "$skill_yaml" | sed 's/author: *//' | tr -d '"' | tr -d "'")
+        tags=$(grep "^tags:" "$skill_yaml" | sed 's/tags: *//')
+
+        echo "  - name: $name" >> index.yaml
+        echo "    type: $type" >> index.yaml
+        echo "    description: $description" >> index.yaml
+        echo "    author: \"$author\"" >> index.yaml
+        if [ -n "$tags" ]; then
+          echo "    tags: $tags" >> index.yaml
+        else
+          echo "    tags: []" >> index.yaml
+        fi
+        echo "    path: $dir" >> index.yaml
+      done
+
+      echo "Generated index.yaml with $(grep -c '  - name:' index.yaml) skills"
+
+      git config user.name "GitLab CI"
+      git config user.email "gitlab-ci@${CI_SERVER_HOST}"
+      git remote set-url origin "https://oauth2:${CI_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+      git add index.yaml
+      if git diff --staged --quiet; then
+        echo "No changes to index.yaml"
+      else
+        git commit -m "chore: auto-generate index.yaml"
+        git push origin HEAD:${CI_DEFAULT_BRANCH}
+      fi

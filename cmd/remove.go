@@ -43,7 +43,7 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	}
 
 	// Remove files
-	client, err := newGitHubClient()
+	client, err := newProvider()
 	if err != nil {
 		return err
 	}

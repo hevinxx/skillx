@@ -11,8 +11,49 @@ import (
 //go:embed files/*
 var templateFS embed.FS
 
+// ciPrefixes maps each provider type to the CI directory prefixes it uses.
+var ciPrefixes = map[string][]string{
+	"github": {".github/"},
+	"gitlab": {".gitlab-ci.yml"},
+	"gitea":  {".gitea/"},
+}
+
+// allCIPrefixes returns all CI-related prefixes across all providers.
+func allCIPrefixes() []string {
+	var all []string
+	for _, prefixes := range ciPrefixes {
+		all = append(all, prefixes...)
+	}
+	return all
+}
+
+// isCIFile checks if a relative path belongs to any provider's CI configuration.
+func isCIFile(rel string) bool {
+	for _, prefix := range allCIPrefixes() {
+		if strings.HasPrefix(rel, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// isCIFileForProvider checks if a relative path belongs to the given provider's CI configuration.
+func isCIFileForProvider(rel, providerType string) bool {
+	prefixes, ok := ciPrefixes[providerType]
+	if !ok {
+		return false
+	}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(rel, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // InitRepo scaffolds a new skill repository at the given directory.
-func InitRepo(dir string) ([]string, error) {
+// providerType determines which CI workflow files to include ("github", "gitlab", or "gitea").
+func InitRepo(dir, providerType string) ([]string, error) {
 	var created []string
 
 	entries, err := walkEmbedDir("files")
@@ -21,15 +62,20 @@ func InitRepo(dir string) ([]string, error) {
 	}
 
 	for _, entry := range entries {
-		data, err := templateFS.ReadFile(entry)
-		if err != nil {
-			return nil, fmt.Errorf("reading template %s: %w", entry, err)
-		}
-
 		// Strip the "files/" prefix to get relative path
 		rel := strings.TrimPrefix(entry, "files/")
 		// Remove .tmpl suffix if present
 		rel = strings.TrimSuffix(rel, ".tmpl")
+
+		// Skip CI files that don't belong to the selected provider
+		if isCIFile(rel) && !isCIFileForProvider(rel, providerType) {
+			continue
+		}
+
+		data, err := templateFS.ReadFile(entry)
+		if err != nil {
+			return nil, fmt.Errorf("reading template %s: %w", entry, err)
+		}
 
 		target := filepath.Join(dir, rel)
 		if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {

@@ -10,10 +10,25 @@ import (
 
 // Config represents the CLI configuration stored in ~/.config/skillx/config.yaml.
 type Config struct {
-	GitHub   GitHubConfig `yaml:"github"`
-	Defaults Defaults     `yaml:"defaults"`
+	// Provider is the new multi-host configuration.
+	Provider ProviderConfig `yaml:"provider"`
+
+	// GitHub is kept for backward compatibility with existing config files.
+	// If Provider.Type is empty and GitHub is populated, it will be migrated.
+	GitHub *GitHubConfig `yaml:"github,omitempty"`
+
+	Defaults Defaults `yaml:"defaults"`
 }
 
+// ProviderConfig holds the git hosting provider settings.
+type ProviderConfig struct {
+	Type string `yaml:"type"` // "github", "gitlab", "gitea"
+	Host string `yaml:"host"`
+	Org  string `yaml:"org"`
+	Repo string `yaml:"repo"`
+}
+
+// GitHubConfig is the legacy configuration format (kept for backward compatibility).
 type GitHubConfig struct {
 	Host string `yaml:"host"`
 	Org  string `yaml:"org"`
@@ -47,6 +62,7 @@ func Path(binaryName string) (string, error) {
 }
 
 // Load reads the config file from disk.
+// It automatically migrates legacy github: config to the new provider: format.
 func Load(binaryName string) (*Config, error) {
 	p, err := Path(binaryName)
 	if err != nil {
@@ -63,6 +79,18 @@ func Load(binaryName string) (*Config, error) {
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("parsing config: %w", err)
 	}
+
+	// Migrate legacy github: config to provider: format
+	if cfg.Provider.Type == "" && cfg.GitHub != nil {
+		cfg.Provider = ProviderConfig{
+			Type: "github",
+			Host: cfg.GitHub.Host,
+			Org:  cfg.GitHub.Org,
+			Repo: cfg.GitHub.Repo,
+		}
+		cfg.GitHub = nil
+	}
+
 	return &cfg, nil
 }
 

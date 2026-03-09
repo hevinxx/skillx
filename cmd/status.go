@@ -40,7 +40,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	client, err := newGitHubClient()
+	client, err := newProvider()
 	if err != nil {
 		return err
 	}

@@ -61,7 +61,7 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Install files
-	client, err := newGitHubClient()
+	client, err := newProvider()
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,54 @@
+name: Generate Index
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "commands/**/skill.yaml"
+      - "skills/**/skill.yaml"
+      - "agents/**/skill.yaml"
+
+jobs:
+  generate-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate index.yaml
+        run: |
+          echo "skills:" > index.yaml
+
+          for skill_yaml in $(find commands skills agents -name "skill.yaml" 2>/dev/null | sort); do
+            dir=$(dirname "$skill_yaml")
+
+            name=$(grep "^name:" "$skill_yaml" | sed 's/name: *//' | tr -d '"' | tr -d "'")
+            type=$(grep "^type:" "$skill_yaml" | sed 's/type: *//' | tr -d '"' | tr -d "'")
+            description=$(grep "^description:" "$skill_yaml" | sed 's/description: *//')
+            author=$(grep "^author:" "$skill_yaml" | sed 's/author: *//' | tr -d '"' | tr -d "'")
+            tags=$(grep "^tags:" "$skill_yaml" | sed 's/tags: *//')
+
+            echo "  - name: $name" >> index.yaml
+            echo "    type: $type" >> index.yaml
+            echo "    description: $description" >> index.yaml
+            echo "    author: \"$author\"" >> index.yaml
+            if [ -n "$tags" ]; then
+              echo "    tags: $tags" >> index.yaml
+            else
+              echo "    tags: []" >> index.yaml
+            fi
+            echo "    path: $dir" >> index.yaml
+          done
+
+          echo "Generated index.yaml with $(grep -c "  - name:" index.yaml) skills"
+
+      - name: Commit index.yaml
+        run: |
+          git config user.name "gitea-actions[bot]"
+          git config user.email "gitea-actions[bot]@users.noreply.gitea.com"
+          git add index.yaml
+          if git diff --staged --quiet; then
+            echo "No changes to index.yaml"
+          else
+            git commit -m "chore: auto-generate index.yaml"
+            git push
+          fi

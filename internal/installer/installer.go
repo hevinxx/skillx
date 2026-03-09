@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hevinxx/skillx/internal/github"
+	"github.com/hevinxx/skillx/internal/provider"
 	"github.com/hevinxx/skillx/internal/registry"
 	"github.com/hevinxx/skillx/internal/skillrc"
 )
@@ -19,12 +19,12 @@ var installPathMap = map[string]string{
 
 // Installer handles installing and removing skills.
 type Installer struct {
-	client     *github.Client
+	client     provider.Provider
 	binaryName string
 }
 
 // New creates a new Installer.
-func New(client *github.Client, binaryName string) *Installer {
+func New(client provider.Provider, binaryName string) *Installer {
 	return &Installer{client: client, binaryName: binaryName}
 }
 
